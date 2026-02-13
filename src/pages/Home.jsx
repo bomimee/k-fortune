@@ -129,7 +129,7 @@ export default function Home() {
                     </Link>
                 </div>
 
-                {/* Test Buttons */}
+                {/* Test Buttons 
                 <div className="mt-12 pt-8 border-t border-gray-700">
                     <p className="text-gray-500 text-sm mb-4">🧪 테스트 모드 (개발용)</p>
                     <div className="flex flex-col md:flex-row gap-3 justify-center flex-wrap">
@@ -184,6 +184,7 @@ export default function Home() {
                         </Link>
                     </div>
                 </div>
+                */}
             </motion.div>
 
             {/* CSS Animations */}
