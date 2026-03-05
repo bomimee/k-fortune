@@ -16,8 +16,8 @@ export default function YearFortuneAccordion({ analysis }) {
             'July', 'August', 'September', 'October', 'November', 'December'
         ];
         const monthNamesKo = [
-            '1월', '2월', '3월', '4월', '5월', '6월',
-            '7월', '8월', '9월', '10월', '11월', '12월'
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
         ];
 
         monthNames.forEach((monthName, index) => {
@@ -28,7 +28,6 @@ export default function YearFortuneAccordion({ analysis }) {
                 months.push({
                     id: index + 1,
                     name: monthName,
-                    nameKo: monthNamesKo[index],
                     content: match[1].trim()
                 });
             }
@@ -41,16 +40,16 @@ export default function YearFortuneAccordion({ analysis }) {
 
     // Main sections (excluding personality which becomes monthly)
     const mainSections = [
-        { id: 'overview', title: '연간 운세 요약', key: 'summary', icon: '📊', color: 'from-blue-500 to-cyan-500' },
-        { id: 'foundation', title: '기본 정보', key: 'foundation', icon: '🌟', color: 'from-purple-500 to-indigo-500' },
-        { id: 'pillars', title: '사주 원국', key: 'pillars', icon: '🏛️', color: 'from-amber-500 to-orange-500' },
-        { id: 'career', title: '계절별 특징', key: 'career', icon: '🍂', color: 'from-green-500 to-emerald-500' },
-        { id: 'wealth', title: '행운의 달', key: 'wealth', icon: '🌟', color: 'from-yellow-500 to-amber-500' },
-        { id: 'relationships', title: '주의 시기', key: 'relationships', icon: '⚠️', color: 'from-red-500 to-orange-500' },
-        { id: 'health', title: '연애 운세', key: 'health', icon: '💕', color: 'from-pink-500 to-rose-500' },
-        { id: 'timing', title: '재물 운세', key: 'timing', icon: '💰', color: 'from-teal-500 to-cyan-500' },
-        { id: 'actionPlan', title: '건강 운세', key: 'actionPlan', icon: '🏥', color: 'from-indigo-500 to-purple-500' },
-        { id: 'customAdvice', title: '개운법', key: 'customAdvice', icon: '✨', color: 'from-violet-500 to-fuchsia-500' }
+        { id: 'overview', title: 'Annual Fortune Summary', key: 'summary', icon: '📊', color: 'from-blue-500 to-cyan-500' },
+        { id: 'foundation', title: 'Basic Info', key: 'foundation', icon: '🌟', color: 'from-purple-500 to-indigo-500' },
+        { id: 'pillars', title: 'Birth Chart', key: 'pillars', icon: '🏛️', color: 'from-amber-500 to-orange-500' },
+        { id: 'career', title: 'Seasonal Characteristics', key: 'career', icon: '🍂', color: 'from-green-500 to-emerald-500' },
+        { id: 'wealth', title: 'Lucky Months', key: 'wealth', icon: '🌟', color: 'from-yellow-500 to-amber-500' },
+        { id: 'relationships', title: 'Caution Periods', key: 'relationships', icon: '⚠️', color: 'from-red-500 to-orange-500' },
+        { id: 'health', title: 'Love & Relationships', key: 'health', icon: '💕', color: 'from-pink-500 to-rose-500' },
+        { id: 'timing', title: 'Wealth & Career', key: 'timing', icon: '💰', color: 'from-teal-500 to-cyan-500' },
+        { id: 'actionPlan', title: 'Health Fortune', key: 'actionPlan', icon: '🏥', color: 'from-indigo-500 to-purple-500' },
+        { id: 'customAdvice', title: 'Fortune Enhancement', key: 'customAdvice', icon: '✨', color: 'from-violet-500 to-fuchsia-500' }
     ];
 
     const toggleSection = (sectionId) => {
@@ -220,7 +219,7 @@ export default function YearFortuneAccordion({ analysis }) {
             <div className="space-y-3">
                 <h2 className="text-3xl font-bold text-brand-gold mb-6 flex items-center gap-3">
                     <span className="text-4xl">📅</span>
-                    <span>2026년 종합 운세</span>
+                    <span>2026 Annual Fortune</span>
                 </h2>
                 {mainSections.map((section, index) => {
                     const sectionData = analysis?.[section.key];
@@ -284,7 +283,7 @@ export default function YearFortuneAccordion({ analysis }) {
                 <div className="space-y-3 mt-10">
                     <h2 className="text-3xl font-bold text-brand-gold mb-6 flex items-center gap-3">
                         <span className="text-4xl">📆</span>
-                        <span>월별 상세 운세</span>
+                        <span>Monthly Detailed Forecast</span>
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         {monthlyData.map((month, index) => {
@@ -309,9 +308,6 @@ export default function YearFortuneAccordion({ analysis }) {
                                             </span>
                                             <div className="text-left">
                                                 <span className="text-lg font-bold text-white block group-hover:text-brand-gold transition-colors">
-                                                    {month.nameKo}
-                                                </span>
-                                                <span className="text-sm text-gray-400">
                                                     {month.name}
                                                 </span>
                                             </div>

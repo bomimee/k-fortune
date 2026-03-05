@@ -1,20 +1,44 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-
-const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID || "sb";
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { app } from '../firebase'; // verify correct import path for your firebase config
 
 export default function Checkout() {
     const { state } = useLocation();
     const navigate = useNavigate();
     const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     if (!state) return <div className="text-center pt-20">No reading data found.</div>;
 
-    const handleApprove = (orderId) => {
-        // In a real app, verify the order with your backend here
-        console.log("Order approved:", orderId);
-        navigate('/result', { state: state });
+    const handlePolarCheckout = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const functions = getFunctions(app);
+            const createPolarCheckout = httpsCallable(functions, 'createPolarCheckout');
+
+            // Generate success URL
+            const resultUrl = `${window.location.origin}/result?payment=success`;
+
+            // Save state to sessionStorage because we will leave the SPA 
+            // and return via a standard URL redirect from Polar!
+            sessionStorage.setItem('sajuState', JSON.stringify(state));
+
+            // Call backend to get the secure checkout URL
+            const response = await createPolarCheckout({ success_url: resultUrl });
+
+            if (response.data && response.data.url) {
+                // Redirect to Polar hosted checkout page
+                window.location.href = response.data.url;
+            } else {
+                throw new Error("Invalid response from Polar API");
+            }
+        } catch (err) {
+            console.error(err);
+            setError(`Failed to initialize payment: ${err.message}`);
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -28,42 +52,21 @@ export default function Checkout() {
             <div className="bg-gray-900 p-6 rounded-lg max-w-sm mx-auto border border-brand-gold/30">
                 <div className="flex justify-between items-center mb-6">
                     <span className="text-gray-300">Total</span>
-                    <span className="text-2xl font-bold text-brand-gold">$9.99</span>
+                    <span className="text-2xl font-bold text-brand-gold">$2.99</span>
                 </div>
 
-                {/* PayPal Integration */}
-                <PayPalScriptProvider options={{
-                    "client-id": PAYPAL_CLIENT_ID,
-                    currency: "USD",
-                    intent: "capture"
-                }}>
-                    <PayPalButtons
-                        style={{ layout: "vertical", color: "gold", shape: "rect", label: "pay" }}
-                        createOrder={(data, actions) => {
-                            return actions.order.create({
-                                purchase_units: [
-                                    {
-                                        amount: {
-                                            value: "9.99",
-                                        },
-                                    },
-                                ],
-                            });
-                        }}
-                        onApprove={(data, actions) => {
-                            return actions.order.capture().then((details) => {
-                                handleApprove(data.orderID);
-                            });
-                        }}
-                        onError={(err) => {
-                            setError("Payment failed. Please try again.");
-                            console.error("PayPal Error:", err);
-                        }}
-                    />
-                </PayPalScriptProvider>
-                {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
+                <div className="mt-6 flex flex-col items-center border-t border-gray-800 pt-6">
+                    <button
+                        onClick={handlePolarCheckout}
+                        disabled={isLoading}
+                        className={`w-full text-lg font-bold py-3 rounded-lg text-brand-dark ${isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-gold hover:bg-yellow-400'} transition-colors shadow-lg`}
+                    >
+                        {isLoading ? 'Loading Checkout...' : 'Pay with Polar / Credit Card'}
+                    </button>
+                    {error && <p className="text-red-500 mt-3 text-sm">{error}</p>}
+                </div>
 
-                <p className="text-xs text-gray-500 mt-4">Secure payment via PayPal. Satisfaction guaranteed.</p>
+                <p className="text-xs text-gray-500 mt-4">Secure payment via Polar. Hosted in the US, worldwide cards accepted.</p>
             </div>
         </div>
     );

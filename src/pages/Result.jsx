@@ -11,8 +11,28 @@ import YearFortuneAccordion from '../components/YearFortuneAccordion';
 import ResultAccordion from '../components/ResultAccordion';
 
 export default function Result() {
-    const { state } = useLocation();
+    const location = useLocation();
     const { currentUser } = useAuth();
+
+    // Handle state from router (normal flow) or sessionStorage (Polar redirect flow)
+    const [state] = useState(() => {
+        let initialState = location.state;
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (!initialState && urlParams.get('payment') === 'success') {
+            try {
+                const savedState = sessionStorage.getItem('sajuState');
+                if (savedState) {
+                    initialState = JSON.parse(savedState);
+                    // Clear it so refreshing the page doesn't re-trigger a free reading
+                    sessionStorage.removeItem('sajuState');
+                }
+            } catch (e) {
+                console.error('Error parsing session state', e);
+            }
+        }
+        return initialState;
+    });
 
     const [loading, setLoading] = useState(true);
     const [result, setResult] = useState(null);

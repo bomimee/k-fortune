@@ -8,30 +8,30 @@ export default function ResultAccordion({ analysis, type }) {
     const getSections = () => {
         if (type === 'compatibility') {
             return [
-                { id: 'summary', title: '궁합 핵심 요약', icon: '💑', color: 'from-pink-500 to-rose-500' },
-                { id: 'foundation', title: '기본 정보', icon: '📋', color: 'from-blue-500 to-cyan-500' },
-                { id: 'pillars', title: '사주 원국 비교', icon: '🏛️', color: 'from-purple-500 to-indigo-500' },
-                { id: 'personality', title: '오행 상생상극', icon: '☯️', color: 'from-green-500 to-emerald-500' },
-                { id: 'career', title: '일주 비교', icon: '🔮', color: 'from-amber-500 to-orange-500' },
-                { id: 'wealth', title: '궁합 점수', icon: '⭐', color: 'from-yellow-500 to-amber-500' },
-                { id: 'relationships', title: '장기 전망', icon: '🔭', color: 'from-teal-500 to-cyan-500' },
-                { id: 'health', title: '갈등 해결', icon: '🤝', color: 'from-red-500 to-pink-500' },
-                { id: 'timing', title: '관계 발전', icon: '💝', color: 'from-fuchsia-500 to-pink-500' },
-                { id: 'actionPlan', title: '개운법', icon: '✨', color: 'from-violet-500 to-purple-500' }
+                { id: 'summary', title: 'Compatibility Summary', icon: '💑', color: 'from-pink-500 to-rose-500' },
+                { id: 'foundation', title: 'Basic Info', icon: '📋', color: 'from-blue-500 to-cyan-500' },
+                { id: 'pillars', title: 'Birth Chart Comparison', icon: '🏛️', color: 'from-purple-500 to-indigo-500' },
+                { id: 'personality', title: 'Five Elements Harmony', icon: '☯️', color: 'from-green-500 to-emerald-500' },
+                { id: 'career', title: 'Day Pillar Analysis', icon: '🔮', color: 'from-amber-500 to-orange-500' },
+                { id: 'wealth', title: 'Compatibility Score', icon: '⭐', color: 'from-yellow-500 to-amber-500' },
+                { id: 'relationships', title: 'Long-term Outlook', icon: '🔭', color: 'from-teal-500 to-cyan-500' },
+                { id: 'health', title: 'Conflict Resolution', icon: '🤝', color: 'from-red-500 to-pink-500' },
+                { id: 'timing', title: 'Relationship Advice', icon: '💝', color: 'from-fuchsia-500 to-pink-500' },
+                { id: 'actionPlan', title: 'Fortune Enhancement', icon: '✨', color: 'from-violet-500 to-purple-500' }
             ];
         } else {
             return [
-                { id: 'summary', title: '핵심 요약', icon: '📊', color: 'from-blue-500 to-cyan-500' },
-                { id: 'foundation', title: '기본 정보', icon: '🌟', color: 'from-purple-500 to-indigo-500' },
-                { id: 'pillars', title: '사주 원국', icon: '🏛️', color: 'from-amber-500 to-orange-500' },
-                { id: 'personality', title: '성향 분석', icon: '🎭', color: 'from-pink-500 to-rose-500' },
-                { id: 'career', title: '직업·커리어', icon: '💼', color: 'from-green-500 to-emerald-500' },
-                { id: 'wealth', title: '재물', icon: '💰', color: 'from-yellow-500 to-amber-500' },
-                { id: 'relationships', title: '연애/관계', icon: '💕', color: 'from-red-500 to-pink-500' },
-                { id: 'health', title: '건강/생활', icon: '🏥', color: 'from-teal-500 to-cyan-500' },
-                { id: 'timing', title: '대운/세운', icon: '⏰', color: 'from-indigo-500 to-purple-500' },
-                { id: 'actionPlan', title: '실천 플랜', icon: '📋', color: 'from-violet-500 to-fuchsia-500' },
-                { id: 'customAdvice', title: '맞춤 조언', icon: '✨', color: 'from-orange-500 to-red-500' }
+                { id: 'summary', title: 'Core Summary', icon: '📊', color: 'from-blue-500 to-cyan-500' },
+                { id: 'foundation', title: 'Basic Info & Reliability', icon: '🌟', color: 'from-purple-500 to-indigo-500' },
+                { id: 'pillars', title: 'Birth Chart', icon: '🏛️', color: 'from-amber-500 to-orange-500' },
+                { id: 'personality', title: 'Personality Analysis', icon: '🎭', color: 'from-pink-500 to-rose-500' },
+                { id: 'career', title: 'Career & Profession', icon: '💼', color: 'from-green-500 to-emerald-500' },
+                { id: 'wealth', title: 'Wealth & Finance', icon: '💰', color: 'from-yellow-500 to-amber-500' },
+                { id: 'relationships', title: 'Love & Relationships', icon: '💕', color: 'from-red-500 to-pink-500' },
+                { id: 'health', title: 'Health & Lifestyle', icon: '🏥', color: 'from-teal-500 to-cyan-500' },
+                { id: 'timing', title: 'Major Luck Cycles', icon: '⏰', color: 'from-indigo-500 to-purple-500' },
+                { id: 'actionPlan', title: 'Action Plan', icon: '📋', color: 'from-violet-500 to-fuchsia-500' },
+                { id: 'customAdvice', title: 'Personalized Advice', icon: '✨', color: 'from-orange-500 to-red-500' }
             ];
         }
     };

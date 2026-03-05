@@ -47,6 +47,45 @@ exports.generateSajuReading = functions.https.onCall(async (data, context) => {
 });
 
 /**
+ * Cloud Function to create Polar Checkout session
+ */
+exports.createPolarCheckout = functions.https.onCall(async (data, context) => {
+  try {
+    const { success_url } = data;
+    // We use the provided Organization Access Token to authenticate with Polar API
+    const POLAR_API_KEY = process.env.POLAR_ACCESS_TOKEN || 'polar_oat_JsNLoXBCHFlvArmgP3xnNhsmFa6bdSRHoEQX92NBXDM';
+    const PRODUCT_ID = '8abf75a9-86a6-4a43-8192-a1b33b01edec'; // Hardcoded newly fetched Product ID from Polar
+    
+    // In Node.js environment on Firebase, fetch might not be globally available depending on node version,
+    // so we use dynamic import of 'node-fetch' or the built-in fetch if Node >= 18.
+    // Firebase functions engine is "node": "20" here, so native fetch is available.
+    
+    const response = await fetch('https://api.polar.sh/v1/checkouts/custom/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${POLAR_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        product_id: PRODUCT_ID,
+        success_url: success_url
+      })
+    });
+    
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.detail || 'Failed to create Polar checkout link.');
+    }
+    
+    return { url: result.url };
+
+  } catch (error) {
+    console.error('Error creating Polar checkout:', error);
+    throw new functions.https.HttpsError('internal', 'Polar Checkout Error', error.message);
+  }
+});
+
+/**
  * Call Gemini AI to generate Saju analysis
  */
 async function callGeminiAI(prompt, type = 'general') {
@@ -1044,4 +1083,7 @@ ${name}님, 사주는 운명을 알려주는 것이 아니라 **가능성과 경
 `;
 }
 
-module.exports = { generateSajuReading: exports.generateSajuReading };
+module.exports = { 
+  generateSajuReading: exports.generateSajuReading,
+  createPolarCheckout: exports.createPolarCheckout
+};
