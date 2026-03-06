@@ -66,7 +66,8 @@ export default function History() {
         const types = {
             'general': '🔮 General Reading',
             'year-fortune': '📅 Year Fortune',
-            'compatibility': '💕 Compatibility'
+            'compatibility': '💕 Compatibility',
+            'daily-fortune': '🌟 Daily Fortune'
         };
         return types[type] || '🔮 Saju Reading';
     };

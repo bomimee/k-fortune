@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { generateTestAnalysis } from '../utils/testData';
 
 export default function Home() {
     const [stars, setStars] = useState([]);
@@ -121,70 +120,16 @@ export default function Home() {
                     <Link to="/reading/full" className="px-8 py-4 bg-brand-gold text-brand-dark font-bold rounded-lg hover:bg-yellow-500 transition-all transform hover:scale-105 hover:shadow-lg hover:shadow-brand-gold/50 text-lg">
                         Start Full Reading
                     </Link>
-                    <Link to="/reading/compatibility" className="px-8 py-4 border border-brand-gold text-brand-gold font-bold rounded-lg hover:bg-brand-gold hover:text-brand-dark transition-all transform hover:scale-105 text-lg">
+                    <Link to="/reading/compatibility" className="px-8 py-4 border border-brand-gold text-brand-gold font-bold rounded-lg hover:transition-all transform hover:scale-105 text-lg">
                         Check Compatibility
                     </Link>
                     <Link to="/reading/year-fortune" className="px-8 py-4 border border-gray-600 text-gray-300 font-bold rounded-lg hover:border-brand-gold hover:text-brand-gold transition-all transform hover:scale-105 text-lg">
                         Yearly Forecast
                     </Link>
+                    <Link to="/daily-fortune" className="px-8 py-4 border border-gray-600 text-gray-300 font-bold rounded-lg hover:border-brand-gold hover:text-brand-gold transition-all transform hover:scale-105 text-lg">
+                        Daily Fortune
+                    </Link>
                 </div>
-
-                {/* Test Buttons 
-                <div className="mt-12 pt-8 border-t border-gray-700">
-                    <p className="text-gray-500 text-sm mb-4">🧪 테스트 모드 (개발용)</p>
-                    <div className="flex flex-col md:flex-row gap-3 justify-center flex-wrap">
-                        <Link
-                            to="/result"
-                            state={{
-                                name: "테스트",
-                                birthDate: "1990-05-15",
-                                birthTime: "10:00",
-                                gender: "male",
-                                type: "general",
-                                fromHistory: true,
-                                analysis: generateTestAnalysis('general')
-                            }}
-                            className="px-6 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition-all"
-                        >
-                            📊 일반 사주 테스트
-                        </Link>
-                        <Link
-                            to="/result"
-                            state={{
-                                name: "김철수",
-                                partnerName: "이영희",
-                                birthDate: "1990-05-15",
-                                birthTime: "10:00",
-                                partnerBirthDate: "1992-08-20",
-                                partnerBirthTime: "14:00",
-                                gender: "male",
-                                partnerGender: "female",
-                                type: "compatibility",
-                                fromHistory: true,
-                                analysis: generateTestAnalysis('compatibility')
-                            }}
-                            className="px-6 py-2 bg-pink-600 text-white text-sm font-semibold rounded-lg hover:bg-pink-700 transition-all"
-                        >
-                            💑 궁합 분석 테스트
-                        </Link>
-                        <Link
-                            to="/result"
-                            state={{
-                                name: "테스트",
-                                birthDate: "1990-05-15",
-                                birthTime: "10:00",
-                                gender: "male",
-                                type: "year-fortune",
-                                fromHistory: true,
-                                analysis: generateTestAnalysis('year-fortune')
-                            }}
-                            className="px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all"
-                        >
-                            📅 연간 운세 테스트
-                        </Link>
-                    </div>
-                </div>
-                */}
             </motion.div>
 
             {/* CSS Animations */}

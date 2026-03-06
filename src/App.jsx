@@ -7,6 +7,7 @@ import ReadingInput from './pages/ReadingInput';
 import Checkout from './pages/Checkout';
 import Result from './pages/Result';
 import History from './pages/History';
+import DailyFortune from './pages/DailyFortune';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/reading/:type" element={<ReadingInput />} />
+            <Route path="/daily-fortune" element={<DailyFortune />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/result" element={<Result />} />
             <Route path="/history" element={<History />} />

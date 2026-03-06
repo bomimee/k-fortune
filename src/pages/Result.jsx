@@ -77,21 +77,6 @@ export default function Result() {
                     return;
                 }
 
-                // Calculate Saju pillars
-                const saju = calculateSaju(state.birthDate, state.birthTime);
-
-                // Use mock AI in development mode
-                if (USE_MOCK_AI) {
-                    await new Promise((resolve) => setTimeout(resolve, 2000));
-                    const mockAnalysis = generateMockAIAnalysis(state);
-
-                    const readingData = { saju, analysis: mockAnalysis, userData: state };
-                    setResult(readingData);
-
-                    await saveReadingToHistory(readingData);
-                    return;
-                }
-
                 // Production: Prepare data for Cloud Function
                 const requestData = {
                     name: state.name,
@@ -122,7 +107,7 @@ export default function Result() {
 
                 if (response.data?.success) {
                     const readingData = {
-                        saju,
+                        saju: {},
                         analysis: response.data.analysis,
                         userData: state,
                     };
@@ -199,8 +184,8 @@ export default function Result() {
             tempContainer.style.position = 'absolute';
             tempContainer.style.left = '-9999px';
             tempContainer.style.width = '800px';
-            tempContainer.style.backgroundColor = '#1a1a2e';
-            tempContainer.style.color = '#ffffff';
+            tempContainer.style.backgroundColor = '#ffffff';
+            tempContainer.style.color = '#333333';
             tempContainer.style.padding = '40px';
             tempContainer.style.fontFamily = 'Arial, sans-serif';
             document.body.appendChild(tempContainer);
@@ -209,10 +194,10 @@ export default function Result() {
             const titlePage = document.createElement('div');
             titlePage.innerHTML = `
         <div style="text-align:center; padding:100px 20px;">
-          <h1 style="font-size:32px; color:#d4af37; margin-bottom:20px;">
+          <h1 style="font-size:32px; color:#1a1a2e; margin-bottom:20px;">
             ${state.name}'s Saju Reading
           </h1>
-          <p style="font-size:16px; color:#cccccc;">
+          <p style="font-size:16px; color:#666666;">
             Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
@@ -220,7 +205,7 @@ export default function Result() {
             tempContainer.innerHTML = '';
             tempContainer.appendChild(titlePage);
 
-            const titleCanvas = await html2canvas(titlePage, { backgroundColor: '#1a1a2e', scale: 2, logging: false });
+            const titleCanvas = await html2canvas(titlePage, { backgroundColor: '#ffffff', scale: 2, logging: false });
             // jsPDF는 기본으로 첫 페이지가 있으니 거기에 바로 추가
             addCanvasToPdf(pdf, titleCanvas, { margin });
 
@@ -239,6 +224,8 @@ export default function Result() {
             ];
 
             for (const sectionId of sectionsToInclude) {
+                if (state.type === 'year-fortune' && sectionId === 'personality') continue;
+
                 const section = result.analysis?.[sectionId];
                 if (!section) continue;
 
@@ -247,10 +234,10 @@ export default function Result() {
                 const sectionDiv = document.createElement('div');
                 sectionDiv.style.padding = '20px';
                 sectionDiv.innerHTML = `
-          <h2 style="font-size:24px; color:#d4af37; margin-bottom:20px; border-bottom:2px solid #d4af37; padding-bottom:10px;">
+          <h2 style="font-size:24px; color:#1a1a2e; margin-bottom:20px; border-bottom:2px solid #d4af37; padding-bottom:10px;">
             ${section.title ?? sectionId}
           </h2>
-          <div style="font-size:14px; line-height:1.8; color:#e0e0e0; white-space:pre-wrap;">
+          <div style="font-size:14px; line-height:1.8; color:#333333; white-space:pre-wrap;">
             ${(section.content || '')
                         .replace(/\*\*/g, '')
                         .replace(/###/g, '')
@@ -262,38 +249,52 @@ export default function Result() {
                 tempContainer.innerHTML = '';
                 tempContainer.appendChild(sectionDiv);
 
-                const canvas = await html2canvas(sectionDiv, { backgroundColor: '#1a1a2e', scale: 2, logging: false });
+                const canvas = await html2canvas(sectionDiv, { backgroundColor: '#ffffff', scale: 2, logging: false });
                 addCanvasToPdf(pdf, canvas, { margin });
             }
 
             // Monthly forecast (year-fortune only)
-            if (state.type === 'year-fortune' && result.analysis?.pillars?.content) {
-                const monthlyData = result.analysis.pillars.content
-                    .split('\n')
-                    .filter((line) =>
-                        line.match(/^(January|February|March|April|May|June|July|August|September|October|November|December):/)
-                    );
+            if (state.type === 'year-fortune' && result.analysis?.personality?.content) {
+                const content = result.analysis.personality.content;
+                const months = [];
+                const monthNames = [
+                    'January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'
+                ];
 
-                if (monthlyData.length > 0) {
+                monthNames.forEach((monthName) => {
+                    const regex = new RegExp(`\\*\\*${monthName}\\*\\*[\\s:]*([^]*?)(?=\\*\\*(?:January|February|March|April|May|June|July|August|September|October|November|December)\\*\\*|$)`, 'i');
+                    const match = content.match(regex);
+
+                    if (match) {
+                        months.push({
+                            name: monthName,
+                            content: match[1].replace(/^\*+:\s*/, '').trim() // Extra safety fallback
+                        });
+                    }
+                });
+
+                if (months.length > 0) {
                     pdf.addPage();
 
                     const monthlyDiv = document.createElement('div');
                     monthlyDiv.style.padding = '20px';
                     monthlyDiv.innerHTML = `
-            <h2 style="font-size:24px; color:#d4af37; margin-bottom:20px; border-bottom:2px solid #d4af37; padding-bottom:10px;">
+            <h2 style="font-size:24px; color:#1a1a2e; margin-bottom:20px; border-bottom:2px solid #d4af37; padding-bottom:10px;">
               📅 Monthly Forecast
             </h2>
-            <div style="font-size:14px; line-height:1.8; color:#e0e0e0;">
-              ${monthlyData
-                            .map((line) => {
-                                const [month, ...rest] = line.split(':');
-                                return `
+            <div style="font-size:14px; line-height:1.8; color:#333333;">
+              ${months
+                            .map((month) => `
                     <div style="margin-bottom:15px;">
-                      <strong style="color:#d4af37; font-size:16px;">${month}</strong>
-                      <p style="margin-top:5px;">${rest.join(':').trim()}</p>
+                      <strong style="color:#1a1a2e; font-size:16px;">${month.name}</strong>
+                      <p style="margin-top:5px; white-space:pre-wrap;">${month.content
+                                    .replace(/\*\*/g, '')
+                                    .replace(/###/g, '')
+                                    .replace(/##/g, '')
+                                }</p>
                     </div>
-                  `;
-                            })
+                  `)
                             .join('')}
             </div>
           `;
@@ -301,7 +302,7 @@ export default function Result() {
                     tempContainer.innerHTML = '';
                     tempContainer.appendChild(monthlyDiv);
 
-                    const monthlyCanvas = await html2canvas(monthlyDiv, { backgroundColor: '#1a1a2e', scale: 2, logging: false });
+                    const monthlyCanvas = await html2canvas(monthlyDiv, { backgroundColor: '#ffffff', scale: 2, logging: false });
                     addCanvasToPdf(pdf, monthlyCanvas, { margin });
                 }
             }

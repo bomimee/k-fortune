@@ -19,6 +19,17 @@ export default function ResultAccordion({ analysis, type }) {
                 { id: 'timing', title: 'Relationship Advice', icon: '💝', color: 'from-fuchsia-500 to-pink-500' },
                 { id: 'actionPlan', title: 'Fortune Enhancement', icon: '✨', color: 'from-violet-500 to-purple-500' }
             ];
+        } else if (type === 'daily-fortune') {
+            return [
+                { id: 'summary', title: 'Overall Daily Luck', icon: '🌟', color: 'from-blue-500 to-cyan-500' },
+                { id: 'love', title: 'Love Luck', icon: '💕', color: 'from-pink-500 to-rose-500' },
+                { id: 'wealth', title: 'Wealth Luck', icon: '💰', color: 'from-yellow-500 to-amber-500' },
+                { id: 'career', title: 'Career Luck', icon: '💼', color: 'from-emerald-500 to-green-500' },
+                { id: 'academic', title: 'Academic / Study', icon: '📚', color: 'from-indigo-500 to-blue-500' },
+                { id: 'health', title: 'Health & Condition', icon: '🏥', color: 'from-red-400 to-rose-500' },
+                { id: 'customAdvice', title: 'Personalized Solution', icon: '✨', color: 'from-purple-500 to-fuchsia-500' },
+                { id: 'luckyItems', title: 'Lucky Keys', icon: '🍀', color: 'from-teal-500 to-emerald-500' }
+            ];
         } else {
             return [
                 { id: 'summary', title: 'Core Summary', icon: '📊', color: 'from-blue-500 to-cyan-500' },

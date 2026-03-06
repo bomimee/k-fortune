@@ -17,6 +17,12 @@ export default function Navbar() {
                 >
                     About Saju
                 </Link>
+                <a
+                    href="mailto:pomvaul@gmail.com?subject=K-SajuFortune Inquiry"
+                    className="text-sm text-gray-300 hover:text-brand-gold transition-colors hidden sm:block"
+                >
+                    Contact
+                </a>
             </div>
             <div>
                 {currentUser ? (

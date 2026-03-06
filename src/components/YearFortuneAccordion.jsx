@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function YearFortuneAccordion({ analysis }) {
-    const [openSection, setOpenSection] = useState('overview');
+    const [openSection, setOpenSection] = useState('summary');
     const [openMonth, setOpenMonth] = useState(null);
 
     // Extract monthly data from pillars section (3️⃣ 월별 운세)
@@ -21,14 +21,14 @@ export default function YearFortuneAccordion({ analysis }) {
         ];
 
         monthNames.forEach((monthName, index) => {
-            const regex = new RegExp(`\\*\\*${monthName}[:\\*]?([^]*?)(?=\\*\\*(?:January|February|March|April|May|June|July|August|September|October|November|December)[:\\*]?|$)`, 'i');
+            const regex = new RegExp(`\\*\\*${monthName}\\*\\*[\\s:]*([^]*?)(?=\\*\\*(?:January|February|March|April|May|June|July|August|September|October|November|December)\\*\\*|$)`, 'i');
             const match = content.match(regex);
 
             if (match) {
                 months.push({
                     id: index + 1,
                     name: monthName,
-                    content: match[1].trim()
+                    content: match[1].replace(/^\*+:\s*/, '').trim()
                 });
             }
         });
@@ -40,16 +40,12 @@ export default function YearFortuneAccordion({ analysis }) {
 
     // Main sections (excluding personality which becomes monthly)
     const mainSections = [
-        { id: 'overview', title: 'Annual Fortune Summary', key: 'summary', icon: '📊', color: 'from-blue-500 to-cyan-500' },
-        { id: 'foundation', title: 'Basic Info', key: 'foundation', icon: '🌟', color: 'from-purple-500 to-indigo-500' },
-        { id: 'pillars', title: 'Birth Chart', key: 'pillars', icon: '🏛️', color: 'from-amber-500 to-orange-500' },
-        { id: 'career', title: 'Seasonal Characteristics', key: 'career', icon: '🍂', color: 'from-green-500 to-emerald-500' },
-        { id: 'wealth', title: 'Lucky Months', key: 'wealth', icon: '🌟', color: 'from-yellow-500 to-amber-500' },
-        { id: 'relationships', title: 'Caution Periods', key: 'relationships', icon: '⚠️', color: 'from-red-500 to-orange-500' },
-        { id: 'health', title: 'Love & Relationships', key: 'health', icon: '💕', color: 'from-pink-500 to-rose-500' },
-        { id: 'timing', title: 'Wealth & Career', key: 'timing', icon: '💰', color: 'from-teal-500 to-cyan-500' },
-        { id: 'actionPlan', title: 'Health Fortune', key: 'actionPlan', icon: '🏥', color: 'from-indigo-500 to-purple-500' },
-        { id: 'customAdvice', title: 'Fortune Enhancement', key: 'customAdvice', icon: '✨', color: 'from-violet-500 to-fuchsia-500' }
+        { id: 'summary', title: 'Overall New Year Fortune', key: 'summary', icon: '✨', color: 'from-amber-400 to-orange-500' },
+        { id: 'love', title: 'Love & Relationships', key: 'love', icon: '💖', color: 'from-pink-500 to-rose-500' },
+        { id: 'wealth', title: 'Wealth & Finance', key: 'wealth', icon: '💰', color: 'from-yellow-500 to-amber-500' },
+        { id: 'career', title: 'Career & Professional', key: 'career', icon: '💼', color: 'from-blue-500 to-indigo-500' },
+        { id: 'health', title: 'Health & Vitality', key: 'health', icon: '🏥', color: 'from-green-500 to-emerald-500' },
+        { id: 'academic', title: 'Academic & Growth', key: 'academic', icon: '📚', color: 'from-purple-500 to-violet-500' }
     ];
 
     const toggleSection = (sectionId) => {
@@ -67,6 +63,8 @@ export default function YearFortuneAccordion({ analysis }) {
         const lines = content.split('\n');
         const elements = [];
         let listItems = [];
+        let tableRows = [];
+        let inTable = false;
 
         const flushList = () => {
             if (listItems.length > 0) {
@@ -79,11 +77,53 @@ export default function YearFortuneAccordion({ analysis }) {
             }
         };
 
+        const flushTable = () => {
+            if (tableRows.length > 0) {
+                elements.push(
+                    <div key={`table-${elements.length}`} className="overflow-x-auto mb-4">
+                        <table className="min-w-full border border-gray-600 rounded-lg overflow-hidden">
+                            <tbody>{tableRows}</tbody>
+                        </table>
+                    </div>
+                );
+                tableRows = [];
+                inTable = false;
+            }
+        };
+
         lines.forEach((paragraph, idx) => {
             const trimmed = paragraph.trim();
             if (!trimmed) {
                 flushList();
                 return;
+            }
+
+            if (trimmed === '---' || trimmed === '***') {
+                return; // Ignore horizontal rules
+            }
+
+            // Handle tables (markdown table format)
+            if (trimmed.startsWith('|')) {
+                if (!inTable) {
+                    flushList();
+                    inTable = true;
+                }
+                // Skip separator rows
+                if (trimmed.match(/^\|[\s-:|]+\|$/)) return;
+
+                const cells = trimmed.split('|').filter(cell => cell.trim());
+                tableRows.push(
+                    <tr key={`row-${idx}`} className="border-b border-gray-700 hover:bg-gray-700/30 transition-colors">
+                        {cells.map((cell, cellIdx) => (
+                            <td key={cellIdx} className="px-4 py-3 text-gray-300 border-r border-gray-700 last:border-r-0">
+                                {cell.trim()}
+                            </td>
+                        ))}
+                    </tr>
+                );
+                return;
+            } else if (inTable) {
+                flushTable();
             }
 
             // Handle headers
@@ -106,6 +146,16 @@ export default function YearFortuneAccordion({ analysis }) {
                         <span className="w-1.5 h-5 bg-brand-gold rounded"></span>
                         {text}
                     </h4>
+                );
+                return;
+            }
+            if (trimmed.startsWith('##')) {
+                flushList();
+                const text = trimmed.replace(/##/g, '').trim();
+                elements.push(
+                    <h3 key={idx} className="text-xl font-bold text-brand-gold mt-6 mb-4 pb-2 border-b border-brand-gold/30">
+                        {text}
+                    </h3>
                 );
                 return;
             }
@@ -170,6 +220,17 @@ export default function YearFortuneAccordion({ analysis }) {
                 return;
             }
 
+            // Handle score indicators (e.g., ⭐⭐⭐⭐☆)
+            if (trimmed.match(/[⭐★☆]{3,}/)) {
+                flushList();
+                elements.push(
+                    <div key={idx} className="text-2xl mb-2">
+                        {trimmed}
+                    </div>
+                );
+                return;
+            }
+
             // Regular paragraphs
             flushList();
             const processedText = trimmed
@@ -187,6 +248,7 @@ export default function YearFortuneAccordion({ analysis }) {
         });
 
         flushList();
+        flushTable();
         return elements;
     };
 
@@ -214,43 +276,95 @@ export default function YearFortuneAccordion({ analysis }) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3">
             {/* Main Sections Accordion */}
-            <div className="space-y-3">
-                <h2 className="text-3xl font-bold text-brand-gold mb-6 flex items-center gap-3">
-                    <span className="text-4xl">📅</span>
-                    <span>2026 Annual Fortune</span>
-                </h2>
-                {mainSections.map((section, index) => {
-                    const sectionData = analysis?.[section.key];
-                    if (!sectionData) return null;
+            {mainSections.map((section, index) => {
+                const sectionData = analysis?.[section.key];
+                if (!sectionData) return null;
 
-                    const isOpen = openSection === section.id;
+                const isOpen = openSection === section.id;
+
+                return (
+                    <motion.div
+                        key={section.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+                    >
+                        <button
+                            onClick={() => toggleSection(section.id)}
+                            className="w-full px-6 py-4 flex justify-between items-center hover:bg-white/5 transition-all group"
+                        >
+                            <span className="flex items-center gap-3">
+                                <span className={`text-2xl p-2 rounded-lg bg-gradient-to-br ${section.color} bg-opacity-20 group-hover:scale-110 transition-transform`}>
+                                    {section.icon}
+                                </span>
+                                <span className="text-lg font-bold text-white group-hover:text-brand-gold transition-colors">
+                                    {section.title}
+                                </span>
+                            </span>
+                            <motion.span
+                                animate={{ rotate: isOpen ? 180 : 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="text-brand-gold text-2xl"
+                            >
+                                ▼
+                            </motion.span>
+                        </button>
+
+                        <AnimatePresence>
+                            {isOpen && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="px-6 py-6 border-t border-gray-700 bg-gray-900/50">
+                                        <div className="prose prose-invert max-w-none">
+                                            {renderContent(sectionData.content)}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </motion.div>
+                );
+            })}
+
+            {/* Monthly Forecast Accordion */}
+            {
+                monthlyData.length > 0 && monthlyData.map((month, index) => {
+                    const isOpen = openMonth === month.id;
 
                     return (
                         <motion.div
-                            key={section.id}
+                            key={month.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
+                            transition={{ delay: (mainSections.length + index) * 0.05 }}
                             className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
                         >
                             <button
-                                onClick={() => toggleSection(section.id)}
-                                className="w-full px-6 py-4 flex justify-between items-center hover:bg-white/5 transition-all group"
+                                onClick={() => toggleMonth(month.id)}
+                                className="w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-all group"
                             >
                                 <span className="flex items-center gap-3">
-                                    <span className={`text-2xl p-2 rounded-lg bg-gradient-to-br ${section.color} bg-opacity-20 group-hover:scale-110 transition-transform`}>
-                                        {section.icon}
+                                    <span className={`text-2xl p-2 rounded-lg bg-gradient-to-br ${getMonthColor(month.id)} bg-opacity-20 group-hover:scale-110 transition-transform`}>
+                                        {getMonthIcon(month.id)}
                                     </span>
-                                    <span className="text-lg font-bold text-white group-hover:text-brand-gold transition-colors">
-                                        {section.title}
-                                    </span>
+                                    <div className="text-left">
+                                        <span className="text-lg font-bold text-white block group-hover:text-brand-gold transition-colors">
+                                            {month.name}
+                                        </span>
+                                    </div>
                                 </span>
                                 <motion.span
                                     animate={{ rotate: isOpen ? 180 : 0 }}
                                     transition={{ duration: 0.3 }}
-                                    className="text-brand-gold text-2xl"
+                                    className="text-brand-gold text-xl"
                                 >
                                     ▼
                                 </motion.span>
@@ -265,9 +379,9 @@ export default function YearFortuneAccordion({ analysis }) {
                                         transition={{ duration: 0.3 }}
                                         className="overflow-hidden"
                                     >
-                                        <div className="px-6 py-6 border-t border-gray-700 bg-gray-900/50">
+                                        <div className="px-5 py-5 border-t border-gray-700 bg-gray-900/50">
                                             <div className="prose prose-invert max-w-none">
-                                                {renderContent(sectionData.content)}
+                                                {renderContent(month.content)}
                                             </div>
                                         </div>
                                     </motion.div>
@@ -275,75 +389,8 @@ export default function YearFortuneAccordion({ analysis }) {
                             </AnimatePresence>
                         </motion.div>
                     );
-                })}
-            </div>
-
-            {/* Monthly Forecast Accordion */}
-            {monthlyData.length > 0 && (
-                <div className="space-y-3 mt-10">
-                    <h2 className="text-3xl font-bold text-brand-gold mb-6 flex items-center gap-3">
-                        <span className="text-4xl">📆</span>
-                        <span>Monthly Detailed Forecast</span>
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {monthlyData.map((month, index) => {
-                            const isOpen = openMonth === month.id;
-
-                            return (
-                                <motion.div
-                                    key={month.id}
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: index * 0.03 }}
-                                    className={`bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 overflow-hidden shadow-lg hover:shadow-2xl transition-all ${isOpen ? 'md:col-span-2 lg:col-span-3' : ''
-                                        }`}
-                                >
-                                    <button
-                                        onClick={() => toggleMonth(month.id)}
-                                        className="w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-all group"
-                                    >
-                                        <span className="flex items-center gap-3">
-                                            <span className={`text-2xl p-2 rounded-lg bg-gradient-to-br ${getMonthColor(month.id)} bg-opacity-20 group-hover:scale-110 transition-transform`}>
-                                                {getMonthIcon(month.id)}
-                                            </span>
-                                            <div className="text-left">
-                                                <span className="text-lg font-bold text-white block group-hover:text-brand-gold transition-colors">
-                                                    {month.name}
-                                                </span>
-                                            </div>
-                                        </span>
-                                        <motion.span
-                                            animate={{ rotate: isOpen ? 180 : 0 }}
-                                            transition={{ duration: 0.3 }}
-                                            className="text-brand-gold text-xl"
-                                        >
-                                            ▼
-                                        </motion.span>
-                                    </button>
-
-                                    <AnimatePresence>
-                                        {isOpen && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                transition={{ duration: 0.3 }}
-                                                className="overflow-hidden"
-                                            >
-                                                <div className="px-5 py-5 border-t border-gray-700 bg-gray-900/50">
-                                                    <div className="prose prose-invert max-w-none">
-                                                        {renderContent(month.content)}
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-        </div>
+                })
+            }
+        </div >
     );
 }

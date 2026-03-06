@@ -9,8 +9,6 @@ export default function ReadingInput() {
     const { type } = useParams();
     const navigate = useNavigate();
     const isCompatibility = type === 'compatibility';
-    const isYearFortune = type === 'year-fortune';
-
     const [formData, setFormData] = useState({
         name: '',
         gender: 'male',
@@ -203,7 +201,6 @@ export default function ReadingInput() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (currentUser && saveProfile) {
             try {
                 await setDoc(doc(db, "users", currentUser.uid), {

@@ -8,6 +8,13 @@ admin.initializeApp();
  */
 exports.generateSajuReading = functions.https.onCall(async (data, context) => {
   try {
+    // In some environments, the payload may be incorrectly left wrapped in { data: ... }
+    // or passed as a CallableRequest object where payload is in .data
+    let payload = data;
+    if (data && data.data && typeof data.data === 'object' && !data.name) {
+      payload = data.data;
+    }
+
     // Extract user data
     const {
       name,
@@ -21,12 +28,12 @@ exports.generateSajuReading = functions.https.onCall(async (data, context) => {
       focusTopics = [],
       currentSituation,
       type
-    } = data;
+    } = payload;
 
-    console.log('Received request:', { name, birthDate, focusTopics, type });
+    console.log('Received request payload:', JSON.stringify(payload));
 
     // Build the prompt for the AI
-    const prompt = buildSajuPrompt(data);
+    const prompt = buildSajuPrompt(payload);
     
     console.log('Generated prompt:', prompt.substring(0, 500) + '...');
 
@@ -137,44 +144,52 @@ function parseAIResponse(aiResponse, type = 'general') {
   
   if (type === 'compatibility') {
     sectionPatterns = [
-      { key: 'summary', pattern: /## 0️⃣ 궁합 핵심 요약([\s\S]*?)(?=---|$)/ },
-      { key: 'foundation', pattern: /## 1️⃣ 기본 정보 & 해석 신뢰도([\s\S]*?)(?=---|$)/ },
-      { key: 'pillars', pattern: /## 2️⃣ 양측 사주 원국\(표\) \+ 오행 분포([\s\S]*?)(?=---|$)/ },
-      { key: 'personality', pattern: /## 3️⃣ 오행 상생상극 분석([\s\S]*?)(?=---|$)/ },
-      { key: 'career', pattern: /## 4️⃣ 일주\(日柱\) 비교 분석([\s\S]*?)(?=---|$)/ },
-      { key: 'wealth', pattern: /## 5️⃣ 상호 궁합 점수([\s\S]*?)(?=---|$)/ },
-      { key: 'relationships', pattern: /## 6️⃣ 장기적 전망([\s\S]*?)(?=---|$)/ },
-      { key: 'health', pattern: /## 7️⃣ 갈등 포인트 & 해결 방안([\s\S]*?)(?=---|$)/ },
-      { key: 'timing', pattern: /## 8️⃣ 관계 발전을 위한 조언([\s\S]*?)(?=---|$)/ },
-      { key: 'actionPlan', pattern: /## 9️⃣ 양측을 위한 개운법([\s\S]*?)(?=---|$)/ },
+      { key: 'summary', pattern: /## 1️⃣ Compatibility Core Summary([\s\S]*?)(?=\n## |$)/ },
+      { key: 'foundation', pattern: /## 2️⃣ Basic Information & Reliability([\s\S]*?)(?=\n## |$)/ },
+      { key: 'pillars', pattern: /## 3️⃣ Birth Charts & Five Elements Score([\s\S]*?)(?=\n## |$)/ },
+      { key: 'personality', pattern: /## 4️⃣ Harmony & Conflict Analysis([\s\S]*?)(?=\n## |$)/ },
+      { key: 'career', pattern: /## 5️⃣ Day Pillar Comparison & Analysis([\s\S]*?)(?=\n## |$)/ },
+      { key: 'wealth', pattern: /## 6️⃣ Mutual Compatibility Scores & Analysis([\s\S]*?)(?=\n## |$)/ },
+      { key: 'relationships', pattern: /## 7️⃣ Long-Term Relationship Outlook([\s\S]*?)(?=\n## |$)/ },
+      { key: 'health', pattern: /## 8️⃣ Potential Conflicts & Resolution Strategies([\s\S]*?)(?=\n## |$)/ },
+      { key: 'timing', pattern: /## 9️⃣ Mutual Growth & Relationship Guide([\s\S]*?)(?=\n## |$)/ },
+      { key: 'actionPlan', pattern: /## 🔟 Fortune Enhancement Strategies([\s\S]*?)(?=\n## |$)/ },
+      { key: 'customAdvice', pattern: /## 1️⃣1️⃣ Current Situation & Master's Advice([\s\S]*?)(?=\n## |$)/ },
     ];
   } else if (type === 'year-fortune') {
     sectionPatterns = [
-      { key: 'summary', pattern: /## 0️⃣ 연간 운세 핵심 요약([\s\S]*?)(?=---|$)/ },
-      { key: 'foundation', pattern: /## 1️⃣ 기본 정보 & 해석 신뢰도([\s\S]*?)(?=---|$)/ },
-      { key: 'pillars', pattern: /## 2️⃣ 사주 원국\(표\) \+ 오행 분포([\s\S]*?)(?=---|$)/ },
-      { key: 'personality', pattern: /## 3️⃣ 월별 운세([\s\S]*?)(?=---|$)/ },
-      { key: 'career', pattern: /## 4️⃣ 계절별 특징([\s\S]*?)(?=---|$)/ },
-      { key: 'wealth', pattern: /## 5️⃣ 행운의 달([\s\S]*?)(?=---|$)/ },
-      { key: 'relationships', pattern: /## 6️⃣ 주의가 필요한 시기([\s\S]*?)(?=---|$)/ },
-      { key: 'health', pattern: /## 7️⃣ 연애\/관계 운세([\s\S]*?)(?=---|$)/ },
-      { key: 'timing', pattern: /## 8️⃣ 재물\/커리어 운세([\s\S]*?)(?=---|$)/ },
-      { key: 'actionPlan', pattern: /## 9️⃣ 건강 운세([\s\S]*?)(?=---|$)/ },
-      { key: 'customAdvice', pattern: /## 🔟 개운법 & 행운의 방향\/색상\/숫자([\s\S]*?)(?=---|$)/ },
+      { key: 'summary', pattern: /## ✨ Overall New Year Fortune([\s\S]*?)(?=\n## |$)/ },
+      { key: 'love', pattern: /## 💖 Detailed Interpretation: Love & Relationships([\s\S]*?)(?=\n## |$)/ },
+      { key: 'wealth', pattern: /## 💰 Detailed Interpretation: Wealth & Finance([\s\S]*?)(?=\n## |$)/ },
+      { key: 'career', pattern: /## 💼 Detailed Interpretation: Career & Professional([\s\S]*?)(?=\n## |$)/ },
+      { key: 'health', pattern: /## 🏥 Detailed Interpretation: Health & Vitality([\s\S]*?)(?=\n## |$)/ },
+      { key: 'academic', pattern: /## 📚 Detailed Interpretation: Academic & Growth([\s\S]*?)(?=\n## |$)/ },
+      { key: 'personality', pattern: /## 📅 Monthly Fortune([\s\S]*?)(?=\n## |$)/ }, // keep key as personality so frontend doesn't break pdf extraction
+    ];
+  } else if (type === 'daily-fortune') {
+    sectionPatterns = [
+      { key: 'summary', pattern: /## 0️⃣ Overall Daily Luck([\s\S]*?)(?=\n## |$)/ },
+      { key: 'love', pattern: /## 1️⃣ Love & Relationships Luck([\s\S]*?)(?=\n## |$)/ },
+      { key: 'wealth', pattern: /## 2️⃣ Wealth & Finance Luck([\s\S]*?)(?=\n## |$)/ },
+      { key: 'career', pattern: /## 3️⃣ Career & Business Luck([\s\S]*?)(?=\n## |$)/ },
+      { key: 'academic', pattern: /## 4️⃣ Academic & Study Luck([\s\S]*?)(?=\n## |$)/ },
+      { key: 'health', pattern: /## 5️⃣ Health & Condition([\s\S]*?)(?=\n## |$)/ },
+      { key: 'customAdvice', pattern: /## 6️⃣ Personalized Solution for You([\s\S]*?)(?=\n## |$)/ },
+      { key: 'luckyItems', pattern: /## 7️⃣ Today's Lucky Keys([\s\S]*?)(?=\n## |$)/ },
     ];
   } else {
     sectionPatterns = [
-      { key: 'summary', pattern: /## 📋 핵심 요약 7줄([\s\S]*?)(?=---|$)/ },
-      { key: 'foundation', pattern: /## 1️⃣ 기본 정보 & 해석 신뢰도([\s\S]*?)(?=---|$)/ },
-      { key: 'pillars', pattern: /## 2️⃣ 사주 원국\(표\) \+ 오행 분포([\s\S]*?)(?=---|$)/ },
-      { key: 'personality', pattern: /## 3️⃣ 성향 분석([\s\S]*?)(?=---|$)/ },
-      { key: 'career', pattern: /## 4️⃣ 직업·커리어([\s\S]*?)(?=---|$)/ },
-      { key: 'wealth', pattern: /## 5️⃣ 재물([\s\S]*?)(?=---|$)/ },
-      { key: 'relationships', pattern: /## 6️⃣ 연애\/관계([\s\S]*?)(?=---|$)/ },
-      { key: 'health', pattern: /## 7️⃣ 건강\/생활([\s\S]*?)(?=---|$)/ },
-      { key: 'timing', pattern: /## 8️⃣ 대운\/세운([\s\S]*?)(?=---|$)/ },
-      { key: 'actionPlan', pattern: /## 9️⃣ 개운\/실천 플랜([\s\S]*?)(?=---|$)/ },
-      { key: 'customAdvice', pattern: /## 🔟 사용자 질문 맞춤 답변([\s\S]*?)(?=---|$)/ },
+      { key: 'summary', pattern: /## 📋 Core Summary([\s\S]*?)(?=\n## |$)/ },
+      { key: 'foundation', pattern: /## 1️⃣ Basic Information & Interpretation Reliability([\s\S]*?)(?=\n## |$)/ },
+      { key: 'pillars', pattern: /## 2️⃣ Birth Chart Breakdown & Five Elements \(Wu Xing\)([\s\S]*?)(?=\n## |$)/ },
+      { key: 'personality', pattern: /## 3️⃣ Deep Personality Analysis([\s\S]*?)(?=\n## |$)/ },
+      { key: 'career', pattern: /## 4️⃣ Career & Professional Trajectory([\s\S]*?)(?=\n## |$)/ },
+      { key: 'wealth', pattern: /## 5️⃣ Wealth & Financial Capacity([\s\S]*?)(?=\n## |$)/ },
+      { key: 'relationships', pattern: /## 6️⃣ Love, Marriage & Interpersonal Relationships([\s\S]*?)(?=\n## |$)/ },
+      { key: 'health', pattern: /## 7️⃣ Health & Vitality([\s\S]*?)(?=\n## |$)/ },
+      { key: 'timing', pattern: /## 8️⃣ Major Luck Cycles \(Daewun & Sewun\)([\s\S]*?)(?=\n## |$)/ },
+      { key: 'actionPlan', pattern: /## 9️⃣ Fortune Enhancement & Action Plan([\s\S]*?)(?=\n## |$)/ },
+      { key: 'customAdvice', pattern: /## 🔟 Current Situation Analysis & Tailored Wisdom([\s\S]*?)(?=\n## |$)/ },
     ];
   }
 
@@ -183,7 +198,7 @@ function parseAIResponse(aiResponse, type = 'general') {
     if (match) {
       sections[key] = {
         title: getSectionTitle(key, type),
-        content: match[1].trim()
+        content: match[1].replace(/[\s-]+$/, '')
       };
     }
   }
@@ -204,48 +219,61 @@ function parseAIResponse(aiResponse, type = 'general') {
  */
 function getSectionTitle(key, type = 'general') {
   const generalTitles = {
-    summary: '핵심 요약',
-    foundation: '기본 정보',
-    pillars: '사주 원국',
-    personality: '성향 분석',
-    career: '직업·커리어',
-    wealth: '재물',
-    relationships: '연애/관계',
-    health: '건강/생활',
-    timing: '대운/세운',
-    actionPlan: '실천 플랜',
-    customAdvice: '맞춤 조언'
+    summary: 'Core Summary',
+    foundation: 'Basic Information & Interpretation Reliability',
+    pillars: 'Birth Chart Breakdown & Five Elements',
+    personality: 'Deep Personality Analysis',
+    career: 'Career & Professional Trajectory',
+    wealth: 'Wealth & Financial Capacity',
+    relationships: 'Love, Marriage & Interpersonal Relationships',
+    health: 'Health & Vitality',
+    timing: 'Major Luck Cycles (Daewun & Sewun)',
+    actionPlan: 'Fortune Enhancement & Action Plan',
+    customAdvice: 'Current Situation Analysis & Tailored Wisdom'
   };
   
   const compatibilityTitles = {
-    summary: '궁합 핵심 요약',
-    foundation: '기본 정보',
-    pillars: '사주 원국',
-    personality: '오행 분석',
-    career: '일주 비교',
-    wealth: '궁합 점수',
-    relationships: '장기 전망',
-    health: '갈등 해결',
-    timing: '관계 발전',
-    actionPlan: '개운법'
+    summary: 'Compatibility Core Summary',
+    foundation: 'Basic Information & Reliability',
+    pillars: 'Birth Charts & Five Elements',
+    personality: 'Harmony & Conflict Analysis',
+    career: 'Day Pillar Comparison',
+    wealth: 'Compatibility Scores',
+    relationships: 'Long-Term Outlook',
+    health: 'Conflicts & Strategies',
+    timing: 'Mutual Growth Guide',
+    actionPlan: 'Fortune Enhancement',
+    customAdvice: "Current Situation & Master's Advice"
   };
   
   const yearFortuneTitles = {
-    summary: '연간 운세 요약',
-    foundation: '기본 정보',
-    pillars: '사주 원국',
-    personality: '월별 운세',
-    career: '계절별 특징',
-    wealth: '행운의 달',
-    relationships: '주의 시기',
-    health: '연애 운세',
-    timing: '재물 운세',
-    actionPlan: '건강 운세',
-    customAdvice: '개운법'
+    summary: '2026 Core Theme Summary',
+    foundation: 'Basic Information & Reliability',
+    pillars: 'Birth Chart & Five Elements',
+    personality: 'Detailed Monthly Fortune',
+    career: 'Energy Flow by Season',
+    wealth: 'Your Peak Lucky Months',
+    relationships: 'Crucial Caution Periods',
+    health: 'Love & Relationship Outlook',
+    timing: 'Wealth & Career Projection',
+    actionPlan: 'Health & Vitality',
+    customAdvice: "Master's Advice for Your Current Focus"
+  };
+
+  const dailyFortuneTitles = {
+    summary: 'Overall Daily Luck',
+    love: 'Love & Relationships Luck',
+    wealth: 'Wealth & Finance Luck',
+    career: 'Career & Business Luck',
+    academic: 'Academic & Study Luck',
+    health: 'Health & Condition',
+    customAdvice: 'Personalized Solution',
+    luckyItems: 'Today\'s Lucky Keys',
   };
   
   const titles = type === 'compatibility' ? compatibilityTitles : 
-                type === 'year-fortune' ? yearFortuneTitles : generalTitles;
+                type === 'year-fortune' ? yearFortuneTitles : 
+                type === 'daily-fortune' ? dailyFortuneTitles : generalTitles;
   
   return titles[key] || key;
 }
@@ -284,6 +312,8 @@ function buildSajuPrompt(data) {
     prompt = buildCompatibilityPrompt(data);
   } else if (readingType === 'year-fortune') {
     prompt = buildYearFortunePrompt(data);
+  } else if (readingType === 'daily-fortune') {
+    prompt = buildDailyFortunePrompt(data);
   } else {
     prompt = buildGeneralPrompt(data);
   }
@@ -306,106 +336,108 @@ function buildGeneralPrompt(data) {
   } = data;
 
   let prompt = `[Role]
-You are an 'AI Saju (Four Pillars of Destiny) Analyst' combining traditional Korean Myeongrihak (命理學) with modern psychological insights.
-Based on the user's birth chart (八字 Bazi), you provide precise analysis of innate personality, social achievements, life balance, and areas for improvement, offering modern solutions.
-Consider the geographical climate (調候 Johu) of the user's birthplace and current residence, as well as cultural and social achievement standards of their country, to provide globally-minded, locally-tailored advice that is not confined to Korean interpretations.
+You are a 'Master AI Saju (Four Pillars of Destiny) Analyst' combining exceptional traditional Korean Myeongrihak (命理學) expertise with modern psychological, practical insights.
+You are tasked with generating an incredibly detailed, comprehensive, and highly professional Saju reading for the user. The output must be exceedingly thorough, equivalent in depth and length to a full A4 page of dense, professional analysis (at least 2000 words).
+
+Based on the user's birth chart (八字 Bazi), you must provide precise and deeply reasoned analysis of their innate personality, social achievements, life balance, and practical modern solutions.
+Consider the geographical climate (調候 Johu) of the user's birthplace and current residence.
+
+[CRITICAL INSTRUCTION - CURRENT SITUATION]
+The user may provide a 'Current Situation' or 'Wish' for today. **DO NOT let this current situation bias or influence your core Saju analysis (Sections 1 through 9).** The core analysis (Personality, Career, Wealth, etc.) must remain completely objective and based *only* on their birth chart. You must ONLY address their 'Current Situation' in **Section 10**.
 
 [Safety & Quality Rules]
-- Specify reliability: If birth time is missing, indicate it's based on '三柱 (Six Characters)' and provide 2-3 likely scenarios for comparison.
-- Simplify terminology: When using Myeongrihak terms like '比肩', '劫財', '用神', always provide modern interpretations (e.g., independence, competitiveness, core solution).
-- Avoid absolutes: Instead of "You will definitely succeed," use strategic advice like "This energy is strong, so utilize it this way."
-- Maximize readability: Use tables, bullet points, and bold text for easy scanning.
+- **EXTREME DETAIL**: Each section must contain multiple paragraphs of deep, insightful analysis. Do not write superficially. Explain *why* you are making a claim based on the Eight Characters.
+- Birth Chart Generation: You MUST build and present the birth chart. If the exact birth time is unknown, assume a baseline (e.g., standard daylight hour) and clearly state in Section 1 that this is a '三柱 (Six Characters)' estimation, but YOU MUST STILL GENERATE A RICH, COMPLETE ANALYSIS based on the Year, Month, and Day pillars. NEVER say you cannot generate an analysis.
+- Simplify Myeongrihak terminology: Always provide modern, universally understandable interpretations of terms.
+- Maximize readability: Use well-structured paragraphs, bullet points, and bold text for key insights.
 
-**CRITICAL: You MUST respond in ENGLISH. All section titles, content, and analysis must be written in English.**
+**CRITICAL: You MUST respond in pure ENGLISH. All section titles, content, and analysis must be written entirely in English.**
 
-[Output Format - Use these exact section titles]
-## 📋 Core Summary (7 Lines)
-(Within 7 lines: This year's fortune, 2 innate strengths, 1 caution point, action mission)
+[Output Format - Use these exact section titles and fill them with extensive detail]
+
+## 📋 Core Summary
+(Provide a dense, insightful summary: The overarching theme of their life, 3 innate strengths, 2 major caution points, and a definitive life strategy.)
 
 ---
 
 ## 1️⃣ Basic Information & Interpretation Reliability
-- Year/Month/Day/Hour stems and branches with Ten Gods table
-- If time is missing, specify interpretation limitations and estimates
+- Provide the Year, Month, Day, and Hour stems and branches along with the corresponding Ten Gods (十神).
+- If birth time is missing, explicitly mention the limitation but confirm that the Year, Month, and Day provide robust foundational truths.
 
 ---
 
-## 2️⃣ Birth Chart (Table) + Five Elements Distribution
-- Analysis of Wood, Fire, Earth, Metal, Water ratios
-- Psychological and physical effects of excessive/deficient elements
+## 2️⃣ Birth Chart Breakdown & Five Elements (Wu Xing)
+- Exhaustive analysis of the distribution of Wood, Fire, Earth, Metal, and Water.
+- What energies are dominant? What is missing? How does this systemic energetic makeup psychologically and physically define them?
 
 ---
 
-## 3️⃣ Personality Analysis
-- Analysis of innate essence (日干 Day Master) and pattern (social role)
-- In-depth analysis of strengths and potential weaknesses (complexes)
+## 3️⃣ Deep Personality Analysis
+- Thorough evaluation of their innate essence (日干 Day Master) and dominant behavior pattern (social mask).
+- Dive deep into their hidden strengths, potential complexes, and how they project themselves to the world vs. how they feel inside.
 
 ---
 
-## 4️⃣ Career & Profession
-- Most suitable industries and work styles
-- Suitability for organizational vs. independent work
+## 4️⃣ Career & Professional Trajectory
+- Identify the exact types of industries, roles, and work environments they are naturally wired to dominate.
+- Discuss their suitability for leadership, entrepreneurship, or collaborative organizational work, based on their chart's structure.
 
 ---
 
-## 5️⃣ Wealth & Finance
-- Size and flow of innate wealth fortune (structure analysis like 食傷生財, 財多身弱)
-- Practical tips for accumulating and preserving wealth
+## 5️⃣ Wealth & Financial Capacity
+- Analyze the size, source, and flow of their innate financial fortune. Do they build wealth through slow accumulation, sudden windfalls, intellectual property, or social connections?
+- Provide practical strategies for asset protection and wealth maximization.
 
 ---
 
-## 6️⃣ Love & Relationships
-- Ideal spouse/partner style
-- Patterns to watch in maintaining relationships
+## 6️⃣ Love, Marriage & Interpersonal Relationships
+- Describe their ideal partner archetype and their own relationship style.
+- Highlight behavioral patterns that might cause friction and provide deep, mature advice on maintaining harmonious connections.
 
 ---
 
-## 7️⃣ Health & Lifestyle
-- Vulnerable body parts and recommended exercise/lifestyle habits
+## 7️⃣ Health & Vitality
+- Point out physiologically vulnerable areas corresponding to their element imbalances.
+- Suggest highly specific lifestyle, dietary, and fitness routines to optimize their energy.
 
 ---
 
-## 8️⃣ Major Luck Cycles (大運/歲運)
-- Nature of current 10-year Major Luck cycle and main life changes
+## 8️⃣ Major Luck Cycles (Daewun & Sewun)
+- Explain the current 10-year major luck cycle: What is the defining theme of this decade for them?
+- What major life shifts, challenges, or golden opportunities lie in the coming years?
 
 ---
 
 ## 9️⃣ Fortune Enhancement & Action Plan
-- Recommended colors, numbers, places, lucky directions
-- Mindset to practice habitually
+- Detail the best colors, numbers, directions, and environments for them.
+- Provide a clear, actionable mindset and habit-building strategy to harmonize their unyielding energies.
 
 ---
 
-## 🔟 Personalized Answers to User's Questions
-- Specific advice on user's focus topics and current situation
+## 🔟 Current Situation Analysis & Tailored Wisdom
+- Analyze the user's specific current situation or questions (if provided below).
+- Provide highly specific, strategic, and comforting advice on how to navigate this exact moment using their inherent Saju strengths. (If no situation is provided, offer a powerful closing blessing.)
 
 [User Information]
-- Name: ${name}
-- Gender: ${gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Other'}
-- Birth Date: ${birthDate}
-- Birth Time: ${birthTimeUnknown ? 'Unknown' : birthTime || 'Not provided'}
-- Calendar Type: ${birthType === 'solar' ? 'Solar' : birthType === 'lunar' ? 'Lunar' : birthType === 'leap' ? 'Leap Month' : 'Unknown'}
+- Name: ${name || 'User'}
+- Gender: ${gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Not Provided'}
+- Birth Date: ${birthDate || 'Not Provided (Assume Jan 1, 2000 for estimation if entirely blank)'}
+- Birth Time: ${birthTimeUnknown ? 'Unknown' : birthTime || 'Unknown'}
+- Calendar Type: ${birthType === 'solar' ? 'Solar' : birthType === 'lunar' ? 'Lunar' : birthType === 'leap' ? 'Leap Month' : 'Solar'}
 - Birth Place: ${birthPlace || 'Not provided'}
 - Current Residence: ${currentResidence || 'Not provided'}
 `;
 
-  if (focusTopics.length > 0) {
+  if (focusTopics && focusTopics.length > 0) {
     prompt += `- Focus Topics: ${focusTopics.join(', ')}\n`;
   }
 
   if (currentSituation) {
-    prompt += `- Current Situation: ${currentSituation}\n`;
+    prompt += `- Current Situation / Wish: ${currentSituation}\n`;
   }
 
-  prompt += `\n[Request]
-Please provide a detailed Saju analysis based on the above information.
-${focusTopics.length > 0 ? `Especially provide very specific and practical advice on the topics: "${focusTopics.join(', ')}".` : ''}
-${birthTimeUnknown ? 'Since birth time is unknown, please provide 2-3 scenarios for different possible time ranges.' : ''}
-${birthPlace ? `Consider the geographical and cultural context of ${birthPlace} in your analysis.` : ''}
-${currentResidence ? `Take into account that the user currently resides in ${currentResidence}.` : ''}
-
-Write in markdown format with clear sections and bullet points for easy reading.
-**IMPORTANT: Write your entire response in ENGLISH. Do not use Korean or any other language.**`;
+  prompt += `\n[Final Instructions]
+Please execute this deeply comprehensive, A4-length Saju reading in English, ensuring absolute separation between the objective astrological analysis (Sections 1-9) and the situational advice (Section 10). Emphasize professional tone, profound detail, and accurate modern applications.`;
 
   return prompt;
 }
@@ -441,105 +473,111 @@ function buildCompatibilityPrompt(data) {
     'custom': 'Relationship'
   }[relationshipType] || 'Relationship';
 
-  let prompt = `[Role]
-You are an 'AI Saju Compatibility Expert' combining traditional Myeongrihak principles of '合 (Harmony)' and '沖 (Conflict)' with modern relationship psychology.
-Through cross-analysis of two people's birth charts, you derive data-based insights on energetic attraction, personality conflicts, long-term synergy, and relationship maintenance strategies.
-Consider the geographical climate (調候 Johu) of both individuals' birthplaces and current residences, as well as cultural and social standards of their countries, to provide globally-minded, locally-tailored advice that is not confined to Korean interpretations.
+let prompt = `[Role]
+You are an elite 'Saju Compatibility Master' combining profound traditional Myeongrihak (사주명리학) principles of '合 (Harmony)' and '沖 (Conflict)' with deep, empathetic relationship psychology.
+You are directly speaking to ${name} and ${partnerName || 'their partner'} in a warm, profound, and deeply insightful way, like a true master would. Your tone is conversational, wise, and highly detailed.
+Your analysis must be exhaustive—producing content equivalent to a full A4 page of deep insights based on their interconnected birth charts (사주팔자).
+Consider the geographical climate (조후 Johu) of both individuals' birthplaces and current residences to provide culturally aware, globally minded advice.
 
 [Safety & Quality Rules]
-- Balanced perspective: Don't blame either party; interpret as 'energy differences' and objectively analyze causes of conflict.
-- Prevent gaslighting/fear: Instead of "You must break up," provide solution-focused advice like "During these times, this communication method is needed."
-- Specify reliability: Indicate interpretation accuracy differences when both have birth times, only one has it, or neither has it.
+1. Deeply Conversational & Empathetic Tone: Speak directly to the people involved (Use "You, ${name}" and "${partnerName || 'your partner'}"). Never use generic terms like "Person A" or "Person B".
+2. Ultimate Detail & Length: This must be a highly elaborate reading. Each section must be several paragraphs long, explaining *why* certain energies interact the way they do based on the Five Elements (Wu Xing) and Ten Gods (Shipshin).
+3. Estimation of Missing Time: If ANY birth time is unknown, you MUST STILL construct a full reading by estimating a plausible birth time based on general fate dynamics, or primarily analyzing the Year, Month, and Day pillars, while explicitly stating your assumption. Do NOT provide a short or generic reading just because the time is missing.
+4. Balanced Perspective: Don't blame either party; interpret as 'energy differences' and objectively analyze causes of conflict. Provide solution-focused advice.
 
-**CRITICAL: You MUST respond in ENGLISH. All section titles, content, and analysis must be written in English.**
+**CRITICAL: You MUST respond entirely in beautiful, natural ENGLISH.**
+**CRITICAL: Use the exact markdown headings provided below. Do not change the numbering or titles.**
+**CRITICAL: Sections 1 through 9 MUST be based purely on the Saju charts. IGNORE any "Current Situation" input for Sections 1-9. ONLY address the "Current Situation" in Section 10.**
 
-[Output Format - Use these exact section titles]
+[Output Format Requirements]
+
 ## 0️⃣ Compatibility Core Summary
-(3-line overview + 5 compatibility keywords + relationship compatibility score out of 100)
+(Provide a warm, multi-paragraph overview of their destined connection, 5 key compatibility keywords, and an overall relationship harmony score out of 100).
 
 ---
 
 ## 1️⃣ Basic Information & Interpretation Reliability
-(Summary of both parties' birth information)
+(Summarize both parties' birth details. If a birth time was missing, explain how you proceeded with the analysis).
 
 ---
 
-## 2️⃣ Birth Charts Comparison (Table) + Five Elements Distribution
-- Energy contrast centered on each person's Day Master (本質) and Month Branch (環境)
-- Side-by-side birth chart comparison in table format
+## 2️⃣ Birth Charts Comparison & Five Elements
+(Provide a detailed breakdown of both individuals' Heavenly Stems and Earthly Branches. Explain their Day Masters. Compare their energy contrasts side-by-side in a beautifully formatted text table or list).
 
 ---
 
 ## 3️⃣ Five Elements Harmony & Conflict Analysis
-- Analysis of whether you complement each other's lacking elements or create excess
-- Detailed explanation of Five Elements distribution chart
+(Analyze deeply whether they complement each other's lacking elements (Yongshin/Heeshin) or create an excess of clash (Gishin). Give a comprehensive explanation of how their energies interact).
 
 ---
 
-## 4️⃣ Day Pillar (日柱) Comparison Analysis
-- Harmony/Conflict between Day Stems (emotional attraction) and Day Branches (lifestyle patterns & intimate compatibility)
+## 4️⃣ Day Pillar Comparison & Analysis
+(Deeply analyze the Harmony/Conflict between their Day Stems (emotional attraction) and Day Branches (lifestyle patterns & intimate compatibility)).
 
 ---
 
-## 5️⃣ Mutual Compatibility Scores
-- Emotional Communication / Value Alignment / Financial Synergy / Sexual Harmony / Social Support (each out of 100)
+## 5️⃣ Mutual Compatibility Scores & Analysis
+(Provide detailed scores out of 100 for Emotional Communication, Value Alignment, Financial Synergy, Sexual Harmony, and Social Support. Explain the reasoning for each score using Saju principles).
 
 ---
 
-## 6️⃣ Long-term Outlook
-- Years and months to particularly watch based on both people's luck flow
-- Relationship timeline (effects of Major/Annual Luck)
+## 6️⃣ Long-Term Relationship Outlook
+(Provide a year-by-year or major luck cycle timeline of their relationship. What years should they watch out for? What years will bring them closer?)
 
 ---
 
-## 7️⃣ Conflict Points & Solutions
-- Clashing energies in the charts and modern communication methods to mitigate them
-- Conflict triggers and 'fire extinguishers'
+## 7️⃣ Potential Conflicts & Resolution Strategies
+(Identify clashing energies in the charts. What triggers conflicts between ${name} and ${partnerName || 'their partner'}? Provide modern, highly specific communication methods and 'fire extinguishers' to mitigate these clashes).
 
 ---
 
-## 8️⃣ Advice for Relationship Development
-- Actions/words to absolutely avoid with each other
-- Customized guide to strengthen the relationship
+## 8️⃣ Mutual Growth & Relationship Guide
+(What actions or words must ${name} absolutely avoid? What about ${partnerName || 'their partner'}? Provide a customized guide to strengthen their bond and grow together).
 
 ---
 
-## 9️⃣ Fortune Enhancement for Both
-- 'Shared lucky elements' to strengthen the relationship (places, activities, colors, etc.)
-- Overall conclusion and encouraging message
+## 9️⃣ Fortune Enhancement Strategies
+(Recommend 'shared lucky elements' to strengthen their relationship—such as specific places to go on dates, activities, interior colors for their home, etc. Conclude with a warm, encouraging message).
+`;
 
-[Person A Information]
+  if (currentSituation) {
+    prompt += `
+---
+
+## 🔟 Current Situation & Master's Advice
+(This is the ONLY section where you address their current relationship situation: "${currentSituation}". Address their specific concerns deeply, applying the Saju insights you gathered in the previous sections to provide profound, actionable, and empathetic advice for their current struggle or situation.)`;
+  } else {
+    prompt += `
+---
+
+## 🔟 Current Situation & Master's Advice
+(No specific current situation was provided. Give them a final, profound piece of master's wisdom for maintaining a beautiful, lifelong connection.)`;
+  }
+
+  prompt += `
+
+[${name}'s Information]
 - Name: ${name}
 - Gender: ${gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Other'}
 - Birth Date: ${birthDate}
-- Birth Time: ${birthTimeUnknown ? 'Unknown' : birthTime || 'Not provided'}
+- Birth Time: ${birthTimeUnknown ? 'Unknown (Please estimate)' : birthTime || 'Not provided'}
 - Calendar Type: ${birthType === 'solar' ? 'Solar' : birthType === 'lunar' ? 'Lunar' : birthType === 'leap' ? 'Leap Month' : 'Unknown'}
-- Birth Place: ${birthPlace || 'Not provided'}
-${currentResidence ? `- Current Residence: ${currentResidence}` : ''}
+- Birth Place: ${birthPlace || 'Not provided'}`;
 
-[Person B Information]
+  if (currentResidence) prompt += `\n- Current Residence: ${currentResidence}`;
+
+  prompt += `
+
+[${partnerName || 'Partner'}'s Information]
 - Name: ${partnerName || 'Not provided'}
 - Gender: ${partnerGender === 'male' ? 'Male' : partnerGender === 'female' ? 'Female' : 'Other'}
 - Birth Date: ${partnerBirthDate || 'Not provided'}
-- Birth Time: ${partnerBirthTimeUnknown ? 'Unknown' : partnerBirthTime || 'Not provided'}
+- Birth Time: ${partnerBirthTimeUnknown ? 'Unknown (Please estimate)' : partnerBirthTime || 'Not provided'}
 - Calendar Type: ${partnerBirthType === 'solar' ? 'Solar' : partnerBirthType === 'lunar' ? 'Lunar' : partnerBirthType === 'leap' ? 'Leap Month' : 'Unknown'}
 - Birth Place: ${partnerBirthPlace || 'Not provided'}
 
 - Relationship Type: ${relationshipLabel}
 `;
-
-  if (currentSituation) {
-    prompt += `- Current Relationship Situation: ${currentSituation}\n`;
-  }
-
-  prompt += `\n[Request]
-Please provide a detailed compatibility analysis based on the information of both individuals.
-${birthTimeUnknown || partnerBirthTimeUnknown ? 'For missing birth times, please include scenarios for different possible time ranges.' : ''}
-${birthPlace || partnerBirthPlace ? `Consider the geographical and cultural contexts of the birthplaces in your analysis.` : ''}
-
-Write in markdown format with clear sections and bullet points for easy reading.
-Provide specific rationale for each score item.
-**IMPORTANT: Write your entire response in ENGLISH. Do not use Korean or any other language.**`;
 
   return prompt;
 }
@@ -557,85 +595,82 @@ function buildYearFortunePrompt(data) {
     currentSituation
   } = data;
 
-  let prompt = `[Role]
-You are an 'AI Annual Fortune Expert' combining traditional Myeongrihak '歲運 (Annual Luck)' analysis with modern 'Life Coaching'.
-You precisely track month-by-month interactions between the user's birth chart and the year 2026's Heavenly Stem/Earthly Branch, suggesting optimal timing and execution strategies.
-Consider the geographical climate (調候 Johu) of the user's birthplace and current residence, as well as cultural and social achievement standards of their country, to provide globally-minded, locally-tailored advice that is not confined to Korean interpretations.
+let prompt = `[Role]
+You are a 'Master AI Annual Fortune Astrologer', an elite Myeongrihak (命理學) and life-coaching expert.
+You are directly addressing the user by their name ("${name}"), speaking as a profound, warm, and highly insightful mentor mapping out their entire year of 2026.
+You will precisely track the month-by-month interactions between ${name}'s innate Day Master (日干) and Eight Characters against the Heavenly Stem/Earthly Branch of 2026 (丙午 year).
 
 [Safety & Quality Rules]
-- Timing-focused analysis: Specify concrete guidance on "when to start and when to stop."
-- Visualize energy flow: Express monthly fortune highs/lows based on Five Elements' interactions in a readable format.
-- Handle uncertainty: If birth time is missing, provide two versions of monthly flow based on Strong/Weak Day Master variations.
-- Readability: Place core keywords in 'hashtag' format at the top of monthly analysis.
-
-**CRITICAL: You MUST respond in ENGLISH. All section titles, content, and analysis must be written in English.**
+1. EXTREME DETAIL & LENGTH: The reading must be incredibly deep, conversational, and extensive. You must explain *why* the energy acts a certain way based on their specific Five Elements (Wu Xing).
+2. CONVERSATIONAL TONE: Speak directly to ${name} as a brilliant mentor. Avoid generic statements; intertwine their elemental composition with the year's energy.
+3. HANDLE UNCERTAINTY: If birth time is unknown, elegantly explain that you are giving a highly accurate projection based on their Year, Month, and Day pillars, and ensure the reading remains robust and confident.
+4. NO KOREAN: Write the entire reading cleanly and beautifully in English.
 
 [Output Format - Use these exact section titles]
-## 0️⃣ Annual Fortune Core Summary
-(Year's motto, 5 core keywords, annual fortune energy graph summary)
+## ✨ Overall New Year Fortune
+Write a rich, detailed conversational paragraph speaking directly to ${name} summarizing their overriding theme for 2026. Are they building, resting, expanding, or transforming? Outline their dominant pillars and how they interact with 2026's energy. Include insights based on their 'Current Year's Focus' if provided ("${currentSituation || 'Not provided'}").
 
----
+## 💖 Detailed Interpretation: Love & Relationships
+An extensive conversational paragraph detailing how 2026 impacts their heart, their marriage/dating luck, and social connections.
 
-## 1️⃣ Basic Information & Interpretation Reliability
-(Including birth chart analysis)
+## 💰 Detailed Interpretation: Wealth & Finance
+A deep dive into their financial trajectory for the year. Will wealth come from active labor, passive investments, or strategic shifts?
 
----
+## 💼 Detailed Interpretation: Career & Professional
+Professional trajectory, business opportunities, and strategic shifts.
 
-## 2️⃣ Birth Chart (Table) + Five Elements Distribution
-(Relationship between 2026's stems/branches and your chart, fundamental changes this year's energy brings to your life)
+## 🏥 Detailed Interpretation: Health & Vitality
+Detailed advice on physical and mental well-being relative to the year's dominant elements.
 
----
+## 📚 Detailed Interpretation: Academic & Growth
+Study luck, learning, and personal growth.
 
-## 3️⃣ Monthly Fortune
-Detailed monthly analysis (January~December):
-**January**: [Monthly theme: #keyword1 #keyword2, Fortune flow, Major events & opportunities, Cautions]
-**February**: [Content]
-**March**: [Content]
-**April**: [Content]
-**May**: [Content]
-**June**: [Content]
-**July**: [Content]
-**August**: [Content]
-**September**: [Content]
-**October**: [Content]
-**November**: [Content]
-**December**: [Content]
+## 📅 Monthly Fortune
+Provide a massive, deeply detailed, and highly conversational analysis for each month (January through December).
+For each month, write multiple beautifully flowing paragraphs covering these specific aspects from various angles:
+- The overriding energy, mood, and specific events of the month based on their chart.
+- Areas of caution (what to avoid, potential conflicts, health risks).
+- Where luck originates (beneficial places to go, auspicious directions, or lucky items).
+- Relationships (who to meet, network with, or avoid).
+- Career & Financial shifts (workplace events, investment timing, business luck).
+DO NOT use bullet points for the months. Do not output anything like \`: \` after the month name. Just write the name of the month boxed in asterisks, followed immediately by a newline and the paragraphs.
 
----
+Format strictly as:
+**January**
+[Deep, multi-paragraph mentoring conversation covering all the points above]
 
-## 4️⃣ Seasonal Characteristics
-(Spring/Summer/Fall/Winter): Analysis of major energy transition points by season
+**February**
+[Deep, multi-paragraph mentoring conversation covering all the points above]
 
----
+**March**
+[Content...]
 
-## 5️⃣ Lucky Months
-[Best Timing] Best months of the year and how to utilize them (reasons and specific action advice)
+**April**
+[Content...]
 
----
+**May**
+[Content...]
 
-## 6️⃣ Caution Periods
-[Caution] Periods requiring caution and countermeasures (risk management strategy)
+**June**
+[Content...]
 
----
+**July**
+[Content...]
 
-## 7️⃣ Love & Relationships Fortune
-(Focused analysis on romance and relationships)
+**August**
+[Content...]
 
----
+**September**
+[Content...]
 
-## 8️⃣ Wealth & Career Fortune
-(Focused analysis on finance and career)
+**October**
+[Content...]
 
----
+**November**
+[Content...]
 
-## 9️⃣ Health Fortune
-(Focused analysis on health and psychology)
-
----
-
-## 🔟 Fortune Enhancement & Lucky Directions/Colors/Numbers
-Lucky directions, colors, numbers, lucky items, and customized feng shui advice
-[Action Plan] Monthly checklist to lead this year to victory
+**December**
+[Content...]
 
 [User Information]
 - Name: ${name}
@@ -645,21 +680,11 @@ Lucky directions, colors, numbers, lucky items, and customized feng shui advice
 - Calendar Type: ${birthType === 'solar' ? 'Solar' : birthType === 'lunar' ? 'Lunar' : birthType === 'leap' ? 'Leap Month' : 'Unknown'}
 - Birth Place: ${birthPlace || 'Not provided'}
 - Current Residence: ${currentResidence || 'Not provided'}
-`;
+- Current Year's Focus: ${currentSituation || 'Not provided'}
 
-  if (currentSituation) {
-    prompt += `- Current Year's Focus: ${currentSituation}\n`;
-  }
+**IMPORTANT: Write your entire response in beautifully crafted, deeply empathetic ENGLISH.**`;
 
-  prompt += `\n[Request]
-Please provide a detailed monthly fortune analysis for 2026.
-${birthTimeUnknown ? 'Since birth time is unknown, please include scenarios for different possible time ranges.' : ''}
-For each month, specify concrete events, opportunities, and cautions.
-${birthPlace ? `Consider the geographical and cultural context of ${birthPlace} in your analysis.` : ''}
-${currentResidence ? `Take into account that the user currently resides in ${currentResidence}.` : ''}
 
-Write in markdown format with clear sections and bullet points for easy reading.
-**IMPORTANT: Write your entire response in ENGLISH. Do not use Korean or any other language.**`;
 
   return prompt;
 }
@@ -1081,6 +1106,98 @@ ${name}님, 사주는 운명을 알려주는 것이 아니라 **가능성과 경
 
 **생성 시간**: ${new Date().toLocaleString('ko-KR')}
 `;
+}
+
+function buildDailyFortunePrompt(data) {
+  const {
+    name,
+    gender,
+    birthDate,
+    birthTime,
+    birthTimeUnknown,
+    birthType,
+    birthPlace,
+    currentResidence,
+    priority,
+    mood,
+    wish
+  } = data;
+
+  let prompt = `[Role]
+You are a 'Master AI Saju Astrologer', a revered mentor translating the deep, ancient wisdom of Myeongrihak (命理學) into a warm, deeply conversational, and extensive daily reading.
+You are addressing the user directly by their name ("${name}"), speaking as a wise, empathetic guide interpreting how their innate Day Master (日干) and Eight Characters interact with today's specific energetic flow (Heavenly Stems and Earthly Branches of today).
+
+[Safety & Quality Rules]
+1. EXTREME DETAIL & LENGTH: Your reading must be extremely detailed, feeling like a premium, A4-length personal consultation. Do not provide brief sentences. Write robust paragraphs for every section explaining *why* based on their Five Elements (Wu Xing).
+2. CONVERSATIONAL TONE: Speak directly to ${name}. Be warm, profound, and highly personalized. Empathize deeply with their current mood ("${mood || 'Not provided'}") and their wish ("${wish || 'Not provided'}").
+3. MISSING BIRTH TIME: If birth time is unknown, gracefully acknowledge that you are reading their deeply ingrained core pillars (Year, Month, Day) and map today's energy against them, ensuring the reading is still comprehensive and highly accurate.
+4. NO KOREAN: You must write the entire reading, including all titles and advice, perfectly in natural, beautiful English.
+
+[Output Format - Use these exact section titles]
+## 0️⃣ Overall Daily Luck
+(Start with a Score out of 100, e.g., ⭐ Overall Score: 85/100)
+Write a beautiful, detailed paragraph greeting ${name}, assessing their current mood, and explaining the overarching energetic theme of today for them based on their Saju. Is today about action, reflection, patience, or bursting forward?
+
+---
+
+## 1️⃣ Love & Relationships Luck
+(Start with a Score out of 100)
+Write an extensive paragraph detailing their romantic and social energy today. How should they communicate? Are there hidden emotional currents based on the Five Elements today?
+
+---
+
+## 2️⃣ Wealth & Finance Luck
+(Start with a Score out of 100)
+Write a deep analysis of today's financial flow. Explain the interplay between their wealth star (재성) and today's energy. Provide detailed, practical advice on spending, saving, or investing today.
+
+---
+
+## 3️⃣ Career & Business Luck
+(Start with a Score out of 100)
+Provide a thorough breakdown of their professional energy. Should they step up and lead, or quietly observe? How does today's environment interact with their official star (관성)? Connect this specifically to their stated priority for today: "${priority || 'Not provided'}".
+
+---
+
+## 4️⃣ Academic & Study Luck
+(Start with a Score out of 100)
+Analyze their intellectual clarity and focus for the day. Provide detailed tips on how to maximize their learning or analytical tasks.
+
+---
+
+## 5️⃣ Health & Condition
+(Start with a Score out of 100)
+Give a rich, empathetic review of their physical and mental vitality. Suggest specific routines or breaks to harmonize their elemental balance today.
+
+---
+
+## 6️⃣ Personalized Solution for You
+Write a dedicated, highly customized master's advice section addressing their specific wish ("${wish || 'Not provided'}"). Act as their personal life coach, giving them a profound, actionable strategy drawn from the wisdom of their chart to conquer today.
+
+---
+
+## 7️⃣ Today's Lucky Keys
+Provide practical, easy-to-read bullet points containing:
+- 🕒 Lucky Time:
+- 🎨 Lucky Color:
+- 🍀 Lucky Item or Food:
+- 🔢 Lucky Number:
+- 🧭 Lucky Direction:
+
+[User Information]
+- Name: ${name}
+- Gender: ${gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Other'}
+- Birth Date: ${birthDate}
+- Birth Time: ${birthTimeUnknown ? 'Unknown' : birthTime || 'Not provided'}
+- Calendar Type: ${birthType === 'solar' ? 'Solar' : birthType === 'lunar' ? 'Lunar' : birthType === 'leap' ? 'Leap Month' : 'Unknown'}
+
+[Today's Input]
+- Most Important Thing: ${priority || 'Nothing specific'}
+- Current Mood: ${mood || 'Nothing specific'}
+- Today's Wish: ${wish || 'Nothing specific'}
+
+**IMPORTANT: Write your entire response in beautifully crafted, deeply empathetic ENGLISH.**`;
+
+  return prompt;
 }
 
 module.exports = { 
