@@ -334,63 +334,101 @@ export default function YearFortuneAccordion({ analysis }) {
                 );
             })}
 
-            {/* Monthly Forecast Accordion */}
-            {
-                monthlyData.length > 0 && monthlyData.map((month, index) => {
-                    const isOpen = openMonth === month.id;
-
-                    return (
-                        <motion.div
-                            key={month.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: (mainSections.length + index) * 0.05 }}
-                            className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+            {/* Monthly Fortune — Single accordion containing all 12 months as sub-accordions */}
+            {monthlyData.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: mainSections.length * 0.05 }}
+                    className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+                >
+                    {/* Monthly Fortune header */}
+                    <button
+                        onClick={() => toggleSection('monthly')}
+                        className="w-full px-6 py-4 flex justify-between items-center hover:bg-white/5 transition-all group"
+                    >
+                        <span className="flex items-center gap-3">
+                            <span className="text-2xl p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 bg-opacity-20 group-hover:scale-110 transition-transform">
+                                📅
+                            </span>
+                            <span className="text-lg font-bold text-white group-hover:text-brand-gold transition-colors">
+                                Monthly Fortune
+                            </span>
+                        </span>
+                        <motion.span
+                            animate={{ rotate: openSection === 'monthly' ? 180 : 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="text-brand-gold text-2xl"
                         >
-                            <button
-                                onClick={() => toggleMonth(month.id)}
-                                className="w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-all group"
-                            >
-                                <span className="flex items-center gap-3">
-                                    <span className={`text-2xl p-2 rounded-lg bg-gradient-to-br ${getMonthColor(month.id)} bg-opacity-20 group-hover:scale-110 transition-transform`}>
-                                        {getMonthIcon(month.id)}
-                                    </span>
-                                    <div className="text-left">
-                                        <span className="text-lg font-bold text-white block group-hover:text-brand-gold transition-colors">
-                                            {month.name}
-                                        </span>
-                                    </div>
-                                </span>
-                                <motion.span
-                                    animate={{ rotate: isOpen ? 180 : 0 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="text-brand-gold text-xl"
-                                >
-                                    ▼
-                                </motion.span>
-                            </button>
+                            ▼
+                        </motion.span>
+                    </button>
 
-                            <AnimatePresence>
-                                {isOpen && (
-                                    <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="overflow-hidden"
-                                    >
-                                        <div className="px-5 py-5 border-t border-gray-700 bg-gray-900/50">
-                                            <div className="prose prose-invert max-w-none">
-                                                {renderContent(month.content)}
+                    <AnimatePresence>
+                        {openSection === 'monthly' && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="px-4 py-4 border-t border-gray-700 bg-gray-900/50 space-y-2">
+                                    {monthlyData.map((month) => {
+                                        const isMonthOpen = openMonth === month.id;
+                                        return (
+                                            <div
+                                                key={month.id}
+                                                className="rounded-lg border border-gray-700 overflow-hidden"
+                                            >
+                                                <button
+                                                    onClick={() => setOpenMonth(isMonthOpen ? null : month.id)}
+                                                    className="w-full px-4 py-3 flex justify-between items-center hover:bg-white/5 transition-all group"
+                                                >
+                                                    <span className="flex items-center gap-3">
+                                                        <span className={`text-xl p-1.5 rounded-md bg-gradient-to-br ${getMonthColor(month.id)} bg-opacity-20 group-hover:scale-110 transition-transform`}>
+                                                            {getMonthIcon(month.id)}
+                                                        </span>
+                                                        <span className="text-base font-semibold text-white group-hover:text-brand-gold transition-colors">
+                                                            {month.name}
+                                                        </span>
+                                                    </span>
+                                                    <motion.span
+                                                        animate={{ rotate: isMonthOpen ? 180 : 0 }}
+                                                        transition={{ duration: 0.2 }}
+                                                        className="text-brand-gold text-lg"
+                                                    >
+                                                        ▼
+                                                    </motion.span>
+                                                </button>
+
+                                                <AnimatePresence>
+                                                    {isMonthOpen && (
+                                                        <motion.div
+                                                            initial={{ height: 0, opacity: 0 }}
+                                                            animate={{ height: 'auto', opacity: 1 }}
+                                                            exit={{ height: 0, opacity: 0 }}
+                                                            transition={{ duration: 0.2 }}
+                                                            className="overflow-hidden"
+                                                        >
+                                                            <div className="px-5 py-4 border-t border-gray-700/60 bg-gray-900/70">
+                                                                <div className="prose prose-invert max-w-none">
+                                                                    {renderContent(month.content)}
+                                                                </div>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
                                             </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </motion.div>
-                    );
-                })
-            }
-        </div >
+                                        );
+                                    })}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
+            )}
+        </div>
     );
 }
+

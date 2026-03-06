@@ -93,6 +93,9 @@ export default function ResultAccordion({ analysis, type }) {
                 flushList();
                 return;
             }
+            // Skip horizontal rule markers (--- or ***)
+            if (/^[-*]{3,}$/.test(trimmed)) return;
+
 
             // Handle tables (markdown table format)
             if (trimmed.startsWith('|')) {

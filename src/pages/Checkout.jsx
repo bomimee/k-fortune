@@ -151,8 +151,20 @@ export default function Checkout() {
                                         onError={onError}
                                         onCancel={onCancel}
                                     />
+
+                                    {/* ── Dev-only test bypass ── */}
+                                    <div className="mt-5 pt-5 border-t border-gray-800 text-center">
+                                        <p className="text-gray-600 text-xs mb-2">🛠 Developer / Test Mode</p>
+                                        <button
+                                            onClick={() => navigate('/result', { state })}
+                                            className="w-full py-2 rounded-lg text-sm font-semibold border border-dashed border-gray-600 text-gray-500 hover:border-gray-400 hover:text-gray-300 transition-colors"
+                                        >
+                                            Skip Payment &amp; Test Reading →
+                                        </button>
+                                    </div>
                                 </motion.div>
                             )}
+
 
                             {paymentStatus === 'processing' && (
                                 <motion.div

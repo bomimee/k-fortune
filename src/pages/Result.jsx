@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -38,15 +38,19 @@ export default function Result() {
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
     const [isDownloading, setIsDownloading] = useState(false);
+    // Guard against React StrictMode double-invoking the effect (saves history only once)
+    const hasSaved = useRef(false);
 
-    // Save reading to Firebase
     const saveReadingToHistory = async (readingData) => {
         if (!currentUser) return;
 
         try {
             const historyRef = collection(db, 'users', currentUser.uid, 'readings');
+            // Exclude 'id' from userData so it doesn't shadow the Firestore doc ID
+            // (Daily Fortune passes a profile object that has its own 'id' field)
+            const { id: _omit, ...userDataClean } = readingData.userData || {};
             await addDoc(historyRef, {
-                ...readingData.userData,
+                ...userDataClean,
                 saju: readingData.saju,
                 analysis: readingData.analysis,
                 createdAt: serverTimestamp(),
@@ -113,7 +117,10 @@ export default function Result() {
                     };
 
                     setResult(readingData);
-                    await saveReadingToHistory(readingData);
+                    if (!hasSaved.current) {
+                        hasSaved.current = true;
+                        await saveReadingToHistory(readingData);
+                    }
                 } else {
                     throw new Error('Failed to generate reading');
                 }
@@ -125,8 +132,9 @@ export default function Result() {
             }
         };
 
+        if (hasSaved.current) return; // StrictMode guard
         generateAIReading();
-    }, [state, currentUser]);
+    }, [state]);
 
     // ✅ 캔버스를 A4 페이지 내부 높이(mm)에 맞춰 "px 기준"으로 안정적으로 슬라이스해서 PDF에 추가
     const addCanvasToPdf = (pdf, canvas, { margin }) => {
